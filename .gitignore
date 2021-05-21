@@ -1,0 +1,31 @@
+/node_modules/
+/.env
+/log
+/sandbox.js
+/misc
+
+# jest
+/coverage
+
+# webpack temporary dir
+/build
+
+# dist
+/dist
+
+/sessions
+
+# jwt keys
+/keys
+
+dump.rdb
+/package.tgz
+/package-*.tgz
+
+.yarn/*
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+
+/artifacts

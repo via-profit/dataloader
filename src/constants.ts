@@ -1,0 +1,2 @@
+export const TIMEOUT_MAX_INT = 2147483647;
+export const TIMEOUT_MIN_INT = 60000;
