@@ -218,8 +218,10 @@ class DataLoader<T> implements DataloaderInterface<T> {
       throw new TypeError('Cleared key must be a string type, ' + `but got: ${typeof key}.`);
     }
 
-    this.#batch.cache.delete(key);
-    this.#batch.callbacks.delete(key);
+    if (this.#batch) {
+      this.#batch.cache.delete(key);
+      this.#batch.callbacks.delete(key);
+    }
     await this.#cache.delele(key);
 
     return this;
@@ -232,8 +234,11 @@ class DataLoader<T> implements DataloaderInterface<T> {
   }
 
   public async clearAll() {
-    this.#batch.cache.clear();
-    this.#batch.callbacks.clear();
+    if (this.#batch) {
+      this.#batch.cache.clear();
+      this.#batch.callbacks.clear();
+    }
+
     this.#cache.clear();
 
     return this;
