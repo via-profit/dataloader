@@ -52,9 +52,11 @@ declare module '@via-profit/dataloader' {
      * It will be used in cases of calling 'load` without the expires argument.\
      * Format: digit + entity.
      * 
-     * For example: `defaultExpiration: 36000`; `defaultExpiration: '12 days'`; `defaultExpiration: '4.5h'`;
+     * For example: `defaultExpiration: 36000`; `defaultExpiration: '12 days'`; `defaultExpiration: '4.5h'`;\
+     * \
+     * Default: `0`
      */
-    defaultExpiration: string | number;
+    defaultExpiration?: string | number;
   }
 
   export interface DataloaderInterface<T> {
@@ -89,7 +91,7 @@ declare module '@via-profit/dataloader' {
   interface DataLoader<T> extends DataloaderInterface<T> {}
 
   class DataLoader<T> {
-    constructor(batchLoadFn: BatchLoadFn<T>, props?: DataLoaderProps);
+    constructor(batchLoadFn: BatchLoadFn<T>, props: DataLoaderProps);
   }
 
   export default DataLoader;
