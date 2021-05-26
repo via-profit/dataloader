@@ -19,10 +19,7 @@ class RedisCache<T> implements Interface<T> {
     const { defaultExpiration } = this.#props;
     const expires = ms(defaultExpiration);
 
-    const interval = Math.min(
-      Math.min(expires, TIMEOUT_MIN_INT),
-      TIMEOUT_MAX_INT,
-    );
+    const interval = Math.min(Math.min(expires, TIMEOUT_MIN_INT), TIMEOUT_MAX_INT);
 
     setInterval(() => {
       this.removeExpires();
@@ -53,7 +50,7 @@ class RedisCache<T> implements Interface<T> {
     }
   }
 
-  public async get(key: string){
+  public async get(key: string) {
     const { redis, cacheName } = this.#props;
     const data = await redis.hget(cacheName, key);
 
@@ -72,7 +69,6 @@ class RedisCache<T> implements Interface<T> {
       }
 
       return payload;
-
     } catch (err) {
       redis.hdel(cacheName, key);
 
@@ -81,8 +77,15 @@ class RedisCache<T> implements Interface<T> {
   }
 
   public async set(key: string, payload: T, expire?: string | number): Promise<void> {
+    if (typeof payload === 'undefined') {
+      throw new TypeError(
+        'Payload data must must be a string, null, object, number or boolean type, ' +
+          `but got ${typeof payload}`,
+      );
+    }
+
     const { redis, defaultExpiration, cacheName } = this.#props;
-    const expireAt = new Date().getTime() + (ms(expire ?? defaultExpiration));
+    const expireAt = new Date().getTime() + ms(expire ?? defaultExpiration);
     const data: CacheNode<T> = {
       expireAt,
       payload,
@@ -102,6 +105,5 @@ class RedisCache<T> implements Interface<T> {
     await redis.del(cacheName);
   }
 }
-
 
 export default RedisCache;
