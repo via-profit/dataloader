@@ -1,7 +1,7 @@
 {
     "name": "@via-profit/dataloader",
     "support": "https://via-profit.ru",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "Via Profit Redis-Dataloader",
     "main": "dist/index.js",
     "engines": {

@@ -72,12 +72,13 @@ declare module '@via-profit/dataloader' {
      * For example: `load(id, 36000)`; `load(id, '12 days')`; `load(id, '4.5h')`
      */
     load(key: string, expires?: string | number): Promise<Node<T> | null>;
+    reload(key: string, expires?: string | number): Promise<Node<T> | null>;
     loadMany(keys: ReadonlyArray<string>): Promise<Node<T>[]>
-    clear(key: string): Promise<this>;
-    clearMany(keys: string[]): Promise<this>;
-    clearAll(): Promise<this>;
-    prime(value: Node<T>, expires?: string | number): Promise<this>;
-    primeMany(values: Node<T>[], expires?: string | number): Promise<this>;
+    clear(key: string): Promise<void>;
+    clearMany(keys: string[]): Promise<void>;
+    clearAll(): Promise<void>;
+    prime(value: Node<T>, expires?: string | number): Promise<void>;
+    primeMany(values: Node<T>[], expires?: string | number): Promise<void>;
   }
 
   export class RedisCache<T> {

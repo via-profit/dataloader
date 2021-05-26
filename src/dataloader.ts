@@ -161,6 +161,12 @@ class DataLoader<T> implements DataloaderInterface<T> {
     return promise;
   }
 
+  public async reload(key: string, expiresStr?: string | number): Promise<Node<T>> {
+    await this.clear(key);
+
+    return this.load(key, expiresStr);
+  }
+
   public async loadMany(keys: ReadonlyArray<string>): Promise<Node<T>[]> {
     const loadPromises: Array<Promise<Node<T>>> = [];
 
@@ -199,8 +205,6 @@ class DataLoader<T> implements DataloaderInterface<T> {
     if (expires > 0) {
       this.#cache.set(value.id, value, expires);
     }
-
-    return this;
   }
 
   public async primeMany(values: Node<T>[], expiresStr?: string | number) {
@@ -209,8 +213,6 @@ class DataLoader<T> implements DataloaderInterface<T> {
 
       this.prime(value, expiresStr);
     }, Promise.resolve());
-
-    return this;
   }
 
   public async clear(key: string) {
@@ -223,14 +225,10 @@ class DataLoader<T> implements DataloaderInterface<T> {
       this.#batch.callbacks.delete(key);
     }
     await this.#cache.delele(key);
-
-    return this;
   }
 
   public async clearMany(keys: string[]) {
     await Promise.all(keys.map(key => this.clear(key)));
-
-    return this;
   }
 
   public async clearAll() {
@@ -240,8 +238,6 @@ class DataLoader<T> implements DataloaderInterface<T> {
     }
 
     this.#cache.clear();
-
-    return this;
   }
 }
 
