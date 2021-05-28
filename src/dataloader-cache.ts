@@ -19,7 +19,7 @@ class RedisCache<T> implements Interface<T> {
     const { defaultExpiration } = this.#props;
     const expires = ms(defaultExpiration);
 
-    const interval = Math.min(Math.min(expires, TIMEOUT_MIN_INT), TIMEOUT_MAX_INT);
+    const interval = Math.min(Math.max(expires, TIMEOUT_MIN_INT), TIMEOUT_MAX_INT);
 
     setInterval(() => {
       this.removeExpires();
