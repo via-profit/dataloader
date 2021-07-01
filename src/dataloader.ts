@@ -60,7 +60,13 @@ class DataLoader<T> implements DataloaderInterface<T> {
       if (cachedNode?.id) {
         cachedKeys.push(cachedNode.id);
 
-        batch.callbacks.get(cachedNode.id).resolve(cachedNode);
+        const promise = batch.callbacks.get(cachedNode.id);
+        if (promise) {
+          promise.resolve(cachedNode);
+        } else {
+          console.error(`Dataloader dispatch error of key «${cachedNode.id}»`);
+          batch.callbacks.delete(cachedNode.id);
+        }
       }
     }, Promise.resolve());
 
