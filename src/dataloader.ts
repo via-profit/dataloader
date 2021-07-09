@@ -92,7 +92,7 @@ class DataLoader<T> implements DataloaderInterface<T> {
     } catch (error) {
       keys.forEach(key => {
         const resolver = batch.callbacks.get(key);
-        resolver.reject(error);
+        resolver?.reject(error);
       });
     }
   }
