@@ -173,14 +173,26 @@ class DataLoader<T> implements DataloaderInterface<T> {
     return this.load(key, expiresStr);
   }
 
-  public async loadMany(keys: ReadonlyArray<string>): Promise<Node<T>[]> {
+  public async loadMany(
+    keys: ReadonlyArray<string>,
+    expiresStr?: string | number,
+  ): Promise<Node<T>[]> {
     const loadPromises: Array<Promise<Node<T>>> = [];
 
     keys.forEach(key => {
-      loadPromises.push(this.load(key).catch(error => error));
+      loadPromises.push(this.load(key, expiresStr).catch(error => error));
     });
 
     return Promise.all(loadPromises);
+  }
+
+  public async reloadMany(
+    keys: ReadonlyArray<string>,
+    expiresStr?: string | number,
+  ): Promise<Node<T>[]> {
+    await this.clearMany(keys);
+
+    return this.loadMany(keys, expiresStr);
   }
 
   public async prime(value: Node<T>, expiresStr?: string | number) {
@@ -233,7 +245,7 @@ class DataLoader<T> implements DataloaderInterface<T> {
     await this.#cache.delele(key);
   }
 
-  public async clearMany(keys: string[]) {
+  public async clearMany(keys: ReadonlyArray<string>) {
     await Promise.all(keys.map(key => this.clear(key)));
   }
 

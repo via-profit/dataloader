@@ -94,7 +94,7 @@ class RedisCache<T> implements Interface<T> {
     await redis.hset(cacheName, key, JSON.stringify(data));
   }
 
-  public async delele(key: string | string[]): Promise<void> {
+  public async delele(key: string | ReadonlyArray<string>): Promise<void> {
     const { redis, cacheName } = this.#props;
     const keys = Array.isArray(key) ? key : [key];
     await redis.hdel(cacheName, ...keys);

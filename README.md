@@ -65,7 +65,8 @@ Use TypeScript for more data abot API and arguments
 | :---------- |:- | :-----------------: | :----------------------------------------- |
 | `load`      | key: `string`, [expires: `string \| number`] | `Promise<T\|null>` | Loads one entity by key                     |
 | `reload`      | key: `string`, [expires: `string \| number`] | `Promise<T\|null>` | Loads one entity by key and ignore cache, but put loaded data into the cache                     |
-| `loadMany`  | keys: `string[]` | `Promise<T[]>`    | Loads one ore more entities                 |
+| `reloadMany`  | keys: `string[]`, [expires: `string \| number`] | `Promise<T[]>`    | Loads one or more entities by keys and ignore cache, but put loaded data into the cache                   |
+| `loadMany`  | keys: `string[]`, [expires: `string \| number`] | `Promise<T[]>`    | Loads one ore more entities                 |
 | `clear`     | key: `string` | `Promise<this>`   | Clear one entity by key                    |
 | `clearMany` | keys: `string[]` | `Promise<this>`   | Clear one ore more entities                |
 | `clearAll`  | - | `Promise<this>`   | Clear all entities                         |

@@ -60,7 +60,6 @@ declare module '@via-profit/dataloader' {
   }
 
   export interface DataloaderInterface<T> {
-
     /**
      * Loads one entity.\
      * \
@@ -68,14 +67,15 @@ declare module '@via-profit/dataloader' {
      * If `expires` argument not passed, then will be used `defaultExpiration` property
      * To prevent the loaded value from being cached, pass `0` as second argument.
      * Format: digit + entity.
-     * 
+     *
      * For example: `load(id, 36000)`; `load(id, '12 days')`; `load(id, '4.5h')`
      */
     load(key: string, expires?: string | number): Promise<Node<T> | null>;
     reload(key: string, expires?: string | number): Promise<Node<T> | null>;
-    loadMany(keys: ReadonlyArray<string>): Promise<Node<T>[]>
+    reloadMany(keys: ReadonlyArray<string>, expires?: string | number): Promise<(Node<T> | null)[]>;
+    loadMany(keys: ReadonlyArray<string>, expires?: string | number): Promise<Node<T>[]>;
     clear(key: string): Promise<void>;
-    clearMany(keys: string[]): Promise<void>;
+    clearMany(keys: ReadonlyArray<string>): Promise<void>;
     clearAll(): Promise<void>;
     prime(value: Node<T>, expires?: string | number): Promise<void>;
     primeMany(values: Node<T>[], expires?: string | number): Promise<void>;
@@ -85,7 +85,7 @@ declare module '@via-profit/dataloader' {
     constructor(props: RedisCacheProps);
     get(key: string): MaybePromise<T | null>;
     set(key: string, value: T, expires?: string | number): MaybePromise<void>;
-    delele(key: string | string[]): MaybePromise<void>;
+    delele(key: string | ReadonlyArray<string>): MaybePromise<void>;
     clear(): MaybePromise<void>;
   }
 
