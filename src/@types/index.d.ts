@@ -52,13 +52,14 @@ declare module '@via-profit/dataloader' {
      * It will be used in cases of calling 'load` without the expires argument.\
      * Format: digit + entity.
      * 
-     * For example: `defaultExpiration: 36000`; `defaultExpiration: '12 days'`; `defaultExpiration: '4.5h'`;
+     * For example: `defaultExpiration: 36000`; `defaultExpiration: '12 days'`; `defaultExpiration: '4.5h'`;\
+     * \
+     * Default: `0`
      */
-    defaultExpiration: string | number;
+    defaultExpiration?: string | number;
   }
 
   export interface DataloaderInterface<T> {
-
     /**
      * Loads one entity.\
      * \
@@ -66,30 +67,32 @@ declare module '@via-profit/dataloader' {
      * If `expires` argument not passed, then will be used `defaultExpiration` property
      * To prevent the loaded value from being cached, pass `0` as second argument.
      * Format: digit + entity.
-     * 
+     *
      * For example: `load(id, 36000)`; `load(id, '12 days')`; `load(id, '4.5h')`
      */
     load(key: string, expires?: string | number): Promise<Node<T> | null>;
-    loadMany(keys: ReadonlyArray<string>): Promise<Node<T>[]>
-    clear(key: string): Promise<this>;
-    clearMany(keys: string[]): Promise<this>;
-    clearAll(): Promise<this>;
-    prime(value: Node<T>, expires?: string | number): Promise<this>;
-    primeMany(values: Node<T>[], expires?: string | number): Promise<this>;
+    reload(key: string, expires?: string | number): Promise<Node<T> | null>;
+    reloadMany(keys: ReadonlyArray<string>, expires?: string | number): Promise<(Node<T> | null)[]>;
+    loadMany(keys: ReadonlyArray<string>, expires?: string | number): Promise<Node<T>[]>;
+    clear(key: string): Promise<void>;
+    clearMany(keys: ReadonlyArray<string>): Promise<void>;
+    clearAll(): Promise<void>;
+    prime(value: Node<T>, expires?: string | number): Promise<void>;
+    primeMany(values: Node<T>[], expires?: string | number): Promise<void>;
   }
 
   export class RedisCache<T> {
     constructor(props: RedisCacheProps);
     get(key: string): MaybePromise<T | null>;
     set(key: string, value: T, expires?: string | number): MaybePromise<void>;
-    delele(key: string | string[]): MaybePromise<void>;
+    delele(key: string | ReadonlyArray<string>): MaybePromise<void>;
     clear(): MaybePromise<void>;
   }
 
   interface DataLoader<T> extends DataloaderInterface<T> {}
 
   class DataLoader<T> {
-    constructor(batchLoadFn: BatchLoadFn<T>, props?: DataLoaderProps);
+    constructor(batchLoadFn: BatchLoadFn<T>, props: DataLoaderProps);
   }
 
   export default DataLoader;

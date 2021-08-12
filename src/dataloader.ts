@@ -1,4 +1,11 @@
-import { Node, Batch, BatchLoadFn, DataloaderInterface, RedisCache as CacheInterface, DataLoaderProps } from '@via-profit/dataloader';
+import {
+  Node,
+  Batch,
+  BatchLoadFn,
+  DataloaderInterface,
+  RedisCache as CacheInterface,
+  DataLoaderProps,
+} from '@via-profit/dataloader';
 
 import RedisCache from './dataloader-cache';
 import mslight from './time-parser';
@@ -15,7 +22,7 @@ class DataLoader<T> implements DataloaderInterface<T> {
   #maxBatchSize = Infinity;
   #batch: Batch<T> | null = null;
 
-  public constructor(batchLoadFn: BatchLoadFn<T>, props: DataLoaderProps){
+  public constructor(batchLoadFn: BatchLoadFn<T>, props: DataLoaderProps) {
     const { redis, defaultExpiration, cacheName, maxBatchSize } = props || {};
 
     this.#defaultExpiration = mslight(defaultExpiration);
@@ -25,16 +32,15 @@ class DataLoader<T> implements DataloaderInterface<T> {
       defaultExpiration,
       cacheName,
       redis,
-    })
+    });
 
     if (typeof batchLoadFn !== 'function') {
       throw new TypeError(
         'DataLoader must be constructed with a function which accepts ' +
-        `Array<key> and returns Promise<Array<value>>, but got: ${batchLoadFn}.`,
+          `Array<key> and returns Promise<Array<value>>, but got: ${batchLoadFn}.`,
       );
     }
   }
-
 
   private async dispatch(batch: Batch<T>) {
     // Mark this batch as having been dispatched.
@@ -51,55 +57,56 @@ class DataLoader<T> implements DataloaderInterface<T> {
     await keys.reduce(async (prev, key) => {
       await prev;
       const cachedNode = await this.#cache.get(key);
-      if (cachedNode !== null) {
-        cachedKeys.push(cachedNode.id)
+      if (cachedNode?.id) {
+        cachedKeys.push(cachedNode.id);
 
-        batch.callbacks
-          .get(cachedNode.id)
-          .resolve(cachedNode);
+        const promise = batch.callbacks.get(cachedNode.id);
+        if (promise) {
+          promise.resolve(cachedNode);
+        } else {
+          console.error(`Dataloader dispatch error of key «${cachedNode.id}»`);
+          batch.callbacks.delete(cachedNode.id);
+        }
       }
-
     }, Promise.resolve());
 
-    const batchKeys = keys.filter((key) => !cachedKeys.includes(key))
+    const batchKeys = keys.filter(key => !cachedKeys.includes(key));
 
     if (batchKeys.length === 0) {
       return;
     }
 
-
     try {
       const values = await this.#batchLoadFn(batchKeys);
-      batchKeys.forEach((key) => {
-        const node = values.find((data) => data?.id === key);
+      batchKeys.forEach(key => {
+        const node = values.find(data => data?.id === key);
         const resolver = batch.callbacks.get(key);
         const nodeCache = batch.cache.get(key);
 
-        if (node !== null && nodeCache?.expires > 0) {
+        if (node !== null && typeof node !== 'undefined' && nodeCache?.expires > 0) {
           this.#cache.set(key, node, nodeCache.expires);
         }
 
         resolver.resolve(node || null);
       });
     } catch (error) {
-      keys.forEach((key) => {
+      keys.forEach(key => {
         const resolver = batch.callbacks.get(key);
-        resolver.reject(error);
+        resolver?.reject(error);
       });
     }
   }
 
-
   private getBatch(): Batch<T> {
     const existingBatch = this.#batch;
 
-    if (existingBatch
-      && !existingBatch.hasDispatched
-      && existingBatch.keys.size < this.#maxBatchSize
+    if (
+      existingBatch &&
+      !existingBatch.hasDispatched &&
+      existingBatch.keys.size < this.#maxBatchSize
     ) {
       return existingBatch;
     }
-
 
     // create batch
     const newBatch: Batch<T> = {
@@ -114,28 +121,24 @@ class DataLoader<T> implements DataloaderInterface<T> {
     (resolvedPromise ?? Promise.resolve()).then(() => {
       process.nextTick(() => {
         this.dispatch(newBatch);
-      })
+      });
     });
 
     return newBatch;
   }
 
   /**
- * Loads a key, returning a `Promise` for the value represented by that key.
- */
+   * Loads a key, returning a `Promise` for the value represented by that key.
+   */
   public async load(key: string, expiresStr?: string | number): Promise<Node<T>> {
     if (key === null || key === undefined) {
       throw new TypeError(
-        'The loader.load() function must be called with a value, ' +
-        `but got: ${String(key)}.`,
+        'The loader.load() function must be called with a value, ' + `but got: ${String(key)}.`,
       );
     }
 
     if (typeof key !== 'string') {
-      throw new TypeError(
-        'Loaded key must be a string type, ' +
-        `but got: ${typeof key}.`,
-      );
+      throw new TypeError('Loaded key must be a string type, ' + `but got: ${typeof key}.`);
     }
 
     // create batch
@@ -145,7 +148,6 @@ class DataLoader<T> implements DataloaderInterface<T> {
     if (batch.cache.has(key)) {
       return batch.cache.get(key).promise;
     }
-
 
     // create promise to return it and cached
     const promise = new Promise<Node<T>>((resolve, reject) => {
@@ -165,33 +167,47 @@ class DataLoader<T> implements DataloaderInterface<T> {
     return promise;
   }
 
-  public async loadMany(keys: ReadonlyArray<string>): Promise<Node<T>[]> {
+  public async reload(key: string, expiresStr?: string | number): Promise<Node<T>> {
+    await this.clear(key);
+
+    return this.load(key, expiresStr);
+  }
+
+  public async loadMany(
+    keys: ReadonlyArray<string>,
+    expiresStr?: string | number,
+  ): Promise<Node<T>[]> {
     const loadPromises: Array<Promise<Node<T>>> = [];
 
-    keys.forEach((key) => {
-      loadPromises.push(
-        this.load(key).catch((error) => error),
-      );
+    keys.forEach(key => {
+      loadPromises.push(this.load(key, expiresStr).catch(error => error));
     });
 
     return Promise.all(loadPromises);
   }
 
-  public async prime(value: Node<T>, expiresStr?: string | number){
+  public async reloadMany(
+    keys: ReadonlyArray<string>,
+    expiresStr?: string | number,
+  ): Promise<Node<T>[]> {
+    await this.clearMany(keys);
+
+    return this.loadMany(keys, expiresStr);
+  }
+
+  public async prime(value: Node<T>, expiresStr?: string | number) {
     if (typeof value?.id === 'undefined') {
       throw new TypeError(
         'Value must contain «id» field. This id must be unique of this dataloader collection, ' +
-        `but got: ${String(value?.id)}.`,
+          `but got: ${String(value?.id)}.`,
       );
     }
 
     if (typeof value.id !== 'string') {
       throw new TypeError(
-        'Value field «id» must be a string type, ' +
-        `but got: ${typeof value.id}.`,
+        'Value field «id» must be a string type, ' + `but got: ${typeof value.id}.`,
       );
     }
-
 
     const promise = Promise.resolve(value);
     const batch = this.getBatch();
@@ -205,55 +221,41 @@ class DataLoader<T> implements DataloaderInterface<T> {
     });
 
     if (expires > 0) {
-      this.#cache.set(
-        value.id,
-        value,
-        expires,
-      );
+      this.#cache.set(value.id, value, expires);
     }
-
-    return this;
   }
 
-  public async primeMany(values: Node<T>[], expiresStr?: string | number){
+  public async primeMany(values: Node<T>[], expiresStr?: string | number) {
     await values.reduce(async (prev, value) => {
       await prev;
 
       this.prime(value, expiresStr);
     }, Promise.resolve());
-
-    return this;
   }
 
   public async clear(key: string) {
     if (typeof key !== 'string') {
-      throw new TypeError(
-        'Cleared key must be a string type, ' +
-        `but got: ${typeof key}.`,
-      );
+      throw new TypeError('Cleared key must be a string type, ' + `but got: ${typeof key}.`);
     }
 
-    this.#batch.cache.delete(key);
-    this.#batch.callbacks.delete(key);
+    if (this.#batch) {
+      this.#batch.cache.delete(key);
+      this.#batch.callbacks.delete(key);
+    }
     await this.#cache.delele(key);
-
-    return this;
   }
 
-  public async clearMany(keys: string[]) {
-    await Promise.all(
-      keys.map((key) => this.clear(key)),
-    );
-
-    return this;
+  public async clearMany(keys: ReadonlyArray<string>) {
+    await Promise.all(keys.map(key => this.clear(key)));
   }
 
   public async clearAll() {
-    this.#batch.cache.clear();
-    this.#batch.callbacks.clear();
-    this.#cache.clear();
+    if (this.#batch) {
+      this.#batch.cache.clear();
+      this.#batch.callbacks.clear();
+    }
 
-    return this;
+    this.#cache.clear();
   }
 }
 
